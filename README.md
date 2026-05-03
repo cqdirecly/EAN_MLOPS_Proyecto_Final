@@ -3,7 +3,7 @@
 ## 4. Instalación
 
 ```bash
-git clone https://github.com/<TU-USUARIO>/proyecto_final.git
+git clone https://github.com/cqdirecly/EAN_MLOPS_Proyecto_Final.git
 cd proyecto_final
 
 python -m venv .venv
@@ -73,7 +73,7 @@ El workflow `.github/workflows/ml.yml` se dispara en cada `push`/`pull_request` 
 6. `make train` → pipeline + MLflow.
 7. **Upload de artefactos**: `model.pkl`, `metrics.json`, `features.json`, `confusion_matrix.json`, y `mlruns/`.
 
-Ver runs: [Actions tab](https://github.com/<TU-USUARIO>/proyecto_final/actions).
+Ver runs: [Actions tab](https://github.com/cqdirecly/EAN_MLOPS_Proyecto_Final/actions).
 
 ---
 
