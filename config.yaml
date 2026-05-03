@@ -1,0 +1,53 @@
+# =====================================================================
+# Configuracion del Pipeline ML - Bike Sharing Demand Classification
+# =====================================================================
+
+data:
+  url: "https://raw.githubusercontent.com/JackyP/testing/master/datasets/hour.csv"
+  url_fallback: "https://raw.githubusercontent.com/LiYangHart/Hyperparameter-Optimization-of-Machine-Learning-Algorithms/master/datasets/hour.csv"
+  raw_path: "data/bike_hour.csv"
+  target: "demand_level"            # columna que crearemos al hacer el binning
+  source_column: "cnt"              # columna que se discretiza
+  n_classes: 4
+  class_labels: ["Low", "Medium", "High", "VeryHigh"]
+  drop_columns:                     # IDs y columnas con leakage
+    - "instant"
+    - "dteday"
+    - "casual"
+    - "registered"
+    - "cnt"
+  categorical_columns:              # se convierten a one-hot
+    - "season"
+    - "mnth"
+    - "hr"
+    - "weekday"
+    - "weathersit"
+
+split:
+  test_size: 0.2
+  random_state: 42
+  stratify: true                    # importante para multiclase
+
+model:
+  name: "XGBClassifier"
+  params:
+    n_estimators: 300
+    max_depth: 6
+    learning_rate: 0.1
+    subsample: 0.9
+    colsample_bytree: 0.9
+    objective: "multi:softprob"
+    num_class: 4
+    eval_metric: "mlogloss"
+    random_state: 42
+    n_jobs: -1
+    tree_method: "hist"
+
+mlflow:
+  experiment_name: "bike-demand-classification"
+  tracking_uri: "file:./mlruns"
+  registered_model_name: "BikeDemandXGBClassifier"
+
+artifacts:
+  output_dir: "artifacts"
+  model_filename: "model.pkl"

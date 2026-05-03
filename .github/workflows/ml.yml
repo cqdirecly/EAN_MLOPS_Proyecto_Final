@@ -1,0 +1,83 @@
+name: ML Pipeline CI/CD - Bike Demand Classification
+
+# =====================================================================
+# Pipeline de CI/CD para clasificacion multiclase Bike Sharing.
+# Se dispara en push y pull_request a main, o manualmente.
+# =====================================================================
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  ml-pipeline:
+    name: Train and validate ML pipeline
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          make install
+
+      - name: Lint with flake8
+        run: make lint
+
+      - name: Run unit tests
+        run: make test
+
+      - name: Train model and log to MLflow
+        run: make train
+
+      - name: Upload trained model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-model
+          path: |
+            artifacts/model.pkl
+            artifacts/metrics.json
+            artifacts/features.json
+            artifacts/confusion_matrix.json
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload MLflow tracking directory
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlruns
+          path: mlruns/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Pipeline summary
+        if: always()
+        run: |
+          echo "## ML Pipeline Summary - Bike Demand Classification" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f artifacts/metrics.json ]; then
+            echo "### Metrics" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat artifacts/metrics.json >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f artifacts/confusion_matrix.json ]; then
+            echo "### Confusion Matrix" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat artifacts/confusion_matrix.json >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Run finished on commit ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
