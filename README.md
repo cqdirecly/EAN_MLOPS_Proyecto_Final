@@ -1,3 +1,74 @@
+# Proyecto MLOps — Bike Demand Classification
+
+[![ML Pipeline CI/CD](https://github.com/cqdirecly/EAN_MLOPS_Proyecto_Final/actions/workflows/ml.yml/badge.svg)](https://github.com/cqdirecly/EAN_MLOPS_Proyecto_Final/actions/workflows/ml.yml)
+
+Pipeline reproducible de Machine Learning con tracking en **MLflow** y CI/CD automatizado en **GitHub Actions**. Predice el **nivel de demanda de bicicletas compartidas** (Low/Medium/High/VeryHigh) por hora a partir de variables temporales y meteorológicas.
+
+---
+
+## 1. Dataset
+
+- **Nombre**: Bike Sharing Dataset (hourly).
+- **Fuente**: UCI Machine Learning Repository — paper de Fanaee-T & Gama (2014).
+- **URL oficial**: https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset
+- **Filas**: 17,379 horas entre 2011-01-01 y 2012-12-31.
+- **Justificación**: Es un dataset de fuente libre (UCI), bien documentado, con variables temporales y meteorológicas que permiten construir un problema multiclase realista mediante discretización del conteo de alquileres por hora.
+
+### Conversión a multiclase (binning)
+La columna original `cnt` (alquileres por hora, entero 1–977) se discretiza en **4 niveles** usando `pd.qcut` con cuartiles:
+
+| Clase | Etiqueta | Rango aproximado |
+|---|---|---|
+| 0 | Low | 1 – 40 |
+| 1 | Medium | 41 – 142 |
+| 2 | High | 143 – 281 |
+| 3 | VeryHigh | 282 – 977 |
+
+`qcut` garantiza ~25% de muestras por clase (dataset balanceado).
+
+### Eliminación de leakage
+Las columnas `casual`, `registered` y `cnt` se eliminan del input porque `cnt = casual + registered`. También se eliminan `instant` (ID) y `dteday` (fecha cruda).
+
+---
+
+## 2. Arquitectura
+
+```mermaid
+flowchart LR
+    A[config.yaml] --> B[src/data.py<br/>Descarga UCI ZIP<br/>+ Binning qcut]
+    B --> C[Stratified split 80/20]
+    C --> D[src/train.py<br/>XGBClassifier]
+    D --> E[src/evaluate.py<br/>accuracy / f1 / log_loss]
+    D --> F[(MLflow Tracking)]
+    F --> G[Artifacts:<br/>model + signature<br/>+ input_example<br/>+ confusion_matrix]
+
+    subgraph CI/CD [GitHub Actions]
+        I[push/PR a main] --> J[make install]
+        J --> K[make lint]
+        K --> L[make test]
+        L --> M[make train]
+        M --> N[Upload model<br/>como artefacto]
+    end
+```
+
+---
+
+## 3. Estructura del repositorio
+
+├── .github/workflows/ml.yml    # Pipeline CI/CD
+├── src/
+│   ├── data.py                 # Carga UCI + binning + preprocesamiento
+│   ├── evaluate.py             # Métricas multiclase + matriz confusión
+│   ├── train.py                # Pipeline + XGBoost + MLflow
+│   └── utils.py                # Helpers (config, logging)
+├── tests/
+│   └── test_pipeline.py        # 9 tests unitarios
+├── data/                       # CSV cacheado y muestra sintética
+├── config.yaml                 # Hiperparámetros y rutas
+├── Makefile                    # Tareas reproducibles
+├── requirements.txt
+└── README.md
+
 ---
 
 ## 4. Instalación
@@ -6,18 +77,14 @@
 git clone https://github.com/cqdirecly/EAN_MLOPS_Proyecto_Final.git
 cd EAN_MLOPS_Proyecto_Final
 
-# Crear entorno virtual
 python -m venv .venv
-
-# Activar entorno virtual
-# Windows PowerShell:
-.venv/Scripts/Activate.ps1
-
-# Linux/Mac:
+# Windows
+.venv\Scripts\activate
+# Linux/Mac
 source .venv/bin/activate
 
-# Instalar dependencias
-pip 
+pip install -r requirements.txt
+```
 
 Requiere Python 3.10+.
 
