@@ -4,16 +4,20 @@
 
 ```bash
 git clone https://github.com/cqdirecly/EAN_MLOPS_Proyecto_Final.git
-cd proyecto_final
+cd EAN_MLOPS_Proyecto_Final
 
+# Crear entorno virtual
 python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# Linux/Mac
+
+# Activar entorno virtual
+# Windows PowerShell:
+.venv/Scripts/Activate.ps1
+
+# Linux/Mac:
 source .venv/bin/activate
 
-pip install -r requirements.txt
-```
+# Instalar dependencias
+pip 
 
 Requiere Python 3.10+.
 
